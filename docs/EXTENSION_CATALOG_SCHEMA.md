@@ -36,6 +36,10 @@ or rewritten to include unsupported package kinds.
 Community Themes has requires=[theme.sd.v1], items=items.
 Community Wallpaper Packs has requires=[wallpaper.packs.v1], items=items.
 
+## Advisory hardware compatibility (Cantina development extension)
+
+A publisher may declare optional `compatibility.devices`, `compatibility.exclude_devices`, and `compatibility.recommended.min_psram_mb` in the manifest. The Cantina generator validates these and emits compact `compatibility.advisory` metadata for compatible firmware discovery. This is **discovery-only**: manual installation and updates are not blocked. Read [the hardware compatibility contract](DEVICE_MEMORY_COMPATIBILITY.md). Legacy firmware ignores new advisory metadata and retains its previous behavior.
+
 ## Theme catalog
 
 community-themes.json is a JSON object containing:

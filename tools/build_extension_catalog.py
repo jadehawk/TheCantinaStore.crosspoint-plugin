@@ -22,7 +22,7 @@ from pathlib import Path
 from build_catalog import (GitHubClient, GitHubRateLimitError, CatalogError,
                            load_blacklist, is_blacklisted_repository,
                            markdown_details_to_html, DETAILS_OUTPUT_DIR,
-                           MAX_DETAILS_SOURCE_BYTES)
+                           MAX_DETAILS_SOURCE_BYTES, normalize_compatibility)
 
 ROOT = Path(__file__).resolve().parents[1]
 ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,31}$")
@@ -68,12 +68,13 @@ def safe_manifest(manifest, ident, kind, tag):
             0 < len(manifest["author"]) <= 120, "invalid author")
     require(isinstance(manifest.get("description"), str) and
             0 < len(manifest["description"]) <= 180, "missing or invalid short description")
+    normalize_compatibility(manifest.get("compatibility"))
     declared = manifest.get("files")
     require(isinstance(declared, list) and 2 <= len(declared) <= MAX_MEMBERS and
             all(safe_path(n) for n in declared) and len(set(declared)) == len(declared) and
             {"manifest.json", "README.md", "DETAILS.md"}.issubset(declared), "unsafe or invalid manifest files")
     if kind == "wallpaper-pack":
-        require(len(set(manifest) - {"kind", "name", "collection", "title", "description", "author", "version", "target_resolution", "images", "files"}) == 0,
+        require(len(set(manifest) - {"kind", "name", "collection", "title", "description", "author", "version", "target_resolution", "images", "files", "compatibility"}) == 0,
                 "unknown wallpaper manifest keys")
         images = manifest.get("images")
         require(isinstance(images, list) and 1 <= len(images) <= 32 and
@@ -238,8 +239,11 @@ def catalog_items(packages, kind):
                             p["manifest"]["target_resolution"]["height"]) for p in variants]
             # One catalog collection must not combine conflicting publisher
             # identity or metadata across display variants.
-            metadata = {(v["manifest"]["version"], v["author"],
-                         v["manifest"]["description"]) for v in variants}
+            metadata = {
+                (v["manifest"]["version"], v["author"], v["manifest"]["description"],
+                 json.dumps(normalize_compatibility(v["manifest"].get("compatibility")), sort_keys=True))
+                for v in variants
+            }
             if len(metadata) != 1 or len(set(names)) != len(names) or len(set(resolutions)) != len(resolutions):
                 collisions.append({"kind":kind,"collection":collection,"repository":variants[0]["repository"],
                                    "reason":"duplicate package ID or resolution in collection"})
@@ -252,6 +256,8 @@ def catalog_items(packages, kind):
                 "_details_markdown":first.get("_details_markdown", ""),
                 "repository":first["repository"], "release":first["tag"],
                 "release_url":first["release_url"], "requires":["wallpaper.packs.v1"],
+                **({"compatibility":normalize_compatibility(first["manifest"]["compatibility"])}
+                   if first["manifest"].get("compatibility") else {}),
                 "variants":[{"name":p["name"],"target_resolution":p["manifest"]["target_resolution"],
                              "asset_url":p["asset_url"],"sha256":p["sha256"],"bytes":p["bytes"]}
                             for p in sorted(variants,key=lambda v:v["name"])],
@@ -267,6 +273,8 @@ def catalog_items(packages, kind):
                 "repository":p["repository"],"release":p["tag"],"release_url":p["release_url"],
                 "requires":["theme.sd.v1"],"asset_url":p["asset_url"],
                 "sha256":p["sha256"],"bytes":p["bytes"],
+                **({"compatibility":normalize_compatibility(m["compatibility"])}
+                   if m.get("compatibility") else {}),
                 "themes":[{"id":t["id"],"title":t.get("title",t["id"]),
                            "requires":t["requires"]} for t in m["themes"]]
             })

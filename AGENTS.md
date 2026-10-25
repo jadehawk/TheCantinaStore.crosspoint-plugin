@@ -19,7 +19,7 @@ ThinkForge connects ChatGPT to this local repo through MCP tools. Treat the acti
 - This repository is a personal development fork of `crosspoint-reader/crosspoint-plugin-hub`.
 - The `origin` remote is `jadehawk/TheCantinaStore.crosspoint-plugin`; `upstream` is read-only reference for future PRs. Do not push to `upstream`.
 - Preserve the **independent** plugin ID `thecantinastore`, the `/.crosspoint/plugins/thecantinastore/` payload layout, legacy catalog compatibility, and old firmware support. It must install alongside, never overwrite, official `pluginhub`.
-- Prefer firmware-exposed capabilities for plugin, theme, and wallpaper compatibility. Optional per-device restrictions must not make otherwise supported firmware incompatible.
+- Prefer firmware-exposed capabilities for plugin, theme, and wallpaper compatibility. Device-model and installed-PSRAM recommendations apply **only to catalog discovery**; never reject manually installed or updated extensions based on hardware recommendations. Firmware capability and package integrity checks are separate.
 - Develop and verify experimental features here before submitting separately scoped pull requests upstream.
 - Never ship unreleased runtime changes through the `stable` branch; run Python and Node tests and inspect Git status/diff before publication.
 

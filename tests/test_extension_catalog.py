@@ -66,6 +66,24 @@ class ExtensionCatalogTests(unittest.TestCase):
                          "catalog-lists-capabilities.json")
         self.assertEqual(browse["items"], "plugins")
 
+    def test_hardware_recommendations_on_themes_and_wallpapers(self):
+        from build_catalog import normalize_compatibility
+        wanted = {"exclude_devices": ["x3"], "recommended": {"min_psram_mb": 2}}
+        for kind, ident, group in (("theme-pack", "minimal", None),
+                                   ("wallpaper-pack", "space-x3", "space")):
+            manifest, _ = payload(ident, kind, group)
+            manifest["compatibility"] = wanted
+            ext.safe_manifest(manifest, ident, kind, "v0.1.1")
+            item_source = {"name": ident, "manifest": manifest, "repository": "example/asset",
+                           "title": ident, "author": "Tester", "tag": "v0.1.1",
+                           "asset_url": "", "sha256": "0" * 64, "bytes": 512, "release_url": ""}
+            items, collisions = ext.catalog_items([item_source], kind)
+            self.assertEqual(collisions, [])
+            self.assertEqual(items[0]["compatibility"], normalize_compatibility(wanted))
+        manifest["compatibility"] = {"recommended": {"min_psram_mb": -5}}
+        with self.assertRaises(ext.CatalogError):
+            ext.safe_manifest(manifest, ident, kind, "v0.1.1")
+
     def test_validate_wallpaper_release_and_size(self):
         _, raw = archive("starwars-x3", "wallpaper-pack", "starwars", (528,792))
         result = ext.check_asset(raw,"starwars-x3","wallpaper-pack","v0.1.1")
@@ -97,6 +115,19 @@ class ExtensionCatalogTests(unittest.TestCase):
         self.assertEqual(len(items),2)
         self.assertEqual(conflicts,[])
         self.assertEqual(sorted(len(i["variants"]) for i in items),[2,2])
+
+    def test_wallpaper_variants_cannot_disagree_on_memory_advice(self):
+        first, _ = archive("space-x3", "wallpaper-pack", "space", (528,792))
+        second, _ = archive("space-x4", "wallpaper-pack", "space", (480,800))
+        first["compatibility"] = {"recommended": {"min_psram_mb": 0}}
+        second["compatibility"] = {"recommended": {"min_psram_mb": 2}}
+        src = [{"name": ident, "manifest": manifest, "repository": "someone/space",
+                "title": ident, "author": "Tester", "tag": "v0.1.1",
+                "asset_url": "", "sha256": "0"*64, "bytes": 512, "release_url": ""}
+               for ident, manifest in (("space-x3", first), ("space-x4", second))]
+        items, conflicts = ext.catalog_items(src, "wallpaper-pack")
+        self.assertEqual(items, [])
+        self.assertEqual(len(conflicts), 1)
 
     def test_duplicate_resolution_rejected_inside_collection(self):
         first, _ = archive("starwars-x3","wallpaper-pack","starwars",(528,792))

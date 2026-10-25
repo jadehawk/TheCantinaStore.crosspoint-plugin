@@ -22,7 +22,8 @@
     "compatibility": {
       "firmware_family": "compatibility.firmware_family",
       "plugin_api_min": "compatibility.plugin_api_min",
-      "requires": "compatibility.requires"
+      "requires": "compatibility.requires",
+      "advisory": "compatibility.advisory"
     }
   },
   "download": {

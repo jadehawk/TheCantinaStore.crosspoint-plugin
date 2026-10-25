@@ -2,6 +2,8 @@
 
 The Cantina Store is an independent development fork of [CrossPoint Plugin Hub](https://github.com/crosspoint-reader/crosspoint-plugin-hub), at [jadehawk/TheCantinaStore.crosspoint-plugin](https://github.com/jadehawk/TheCantinaStore.crosspoint-plugin). It keeps upstream Plugin Hub functionality and catalog contracts, but has its own plugin ID `thecantinastore` and installation folder `/.crosspoint/plugins/thecantinastore/`, allowing installation alongside official `pluginhub`. New catalog and compatibility features are tested here before being proposed upstream.
 
+The store's experimental advisory device/memory filtering is documented in [Device and PSRAM compatibility](docs/DEVICE_MEMORY_COMPATIBILITY.md). Hardware advice filters discovery only; it does not block manual installation or updates. This feature is under development and has not yet been released.
+
 ## Upstream Plugin Hub reference
 
 Plugin Hub is a CrossPoint SD-card plugin for discovering, installing, updating, reinstalling, and removing CrossPoint plugins.
