@@ -10,8 +10,9 @@ def validate(manifest: dict, device: dict, tag: str) -> None:
     if not re.fullmatch(r"v\d+\.\d+\.\d+", tag):
         raise ValueError(f"invalid release tag: {tag}")
     version = tag[1:]
-    if manifest.get("name") != "pluginhub":
-        raise ValueError("manifest plugin ID must be pluginhub")
+    expected_id = "thecantinastore" if tuple(map(int, version.split("."))) >= (0, 1, 13) else "pluginhub"
+    if manifest.get("name") != expected_id:
+        raise ValueError(f"manifest plugin ID must be {expected_id}")
     new_release = tuple(map(int, version.split("."))) >= (0, 1, 8)
     for name, metadata in (("manifest.json", manifest), ("device.json", device)):
         # Older device.json files did not carry a version; keep published

@@ -42,6 +42,21 @@ class ReleaseMetadataTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "The Cantina Store"):
             validate(self.manifest, self.device, "v0.1.12")
 
+    def test_side_by_side_identity_required_from_0_1_13(self):
+        self.manifest.update(name="thecantinastore", title="The Cantina Store", version="0.1.13")
+        self.device.update(title="The Cantina Store", version="0.1.13")
+        validate(self.manifest, self.device, "v0.1.13")
+        self.manifest["name"] = "pluginhub"
+        with self.assertRaisesRegex(ValueError, "thecantinastore"):
+            validate(self.manifest, self.device, "v0.1.13")
+
+    def test_distinct_install_package_layout(self):
+        root = Path(__file__).resolve().parents[1]
+        workflow = (root / ".github/workflows/package-release.yml").read_text(encoding="utf-8")
+        self.assertIn('asset="thecantinastore-${version}.zip"', workflow)
+        self.assertIn('--prefix=".crosspoint/plugins/thecantinastore/"', workflow)
+        self.assertNotIn('--prefix=".crosspoint/plugins/pluginhub/"', workflow)
+
     def test_legacy_tag_remains_repackageable(self):
         self.manifest.update(title="Plugin Hub v0.1.7", version="0.1.7")
         self.device.update(title="Plugin Hub v0.1.7")

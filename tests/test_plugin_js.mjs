@@ -163,13 +163,13 @@ test('browser hub loads custom catalogs and only offers directional updates', as
   async function fetch(url) {
     if (url.startsWith('/download?path=')) {
       const path = new URL(url, 'http://device').searchParams.get('path');
-      if (path === '/.crosspoint/plugin-hub.json') {
+      if (path === '/.crosspoint/thecantinastore.json') {
         return response({
           text: JSON.stringify({ extraCatalogs: [PRIVATE_CATALOG] }),
         });
       }
-      if (path === '/.crosspoint/plugins/pluginhub/manifest.json') {
-        return response({ text: JSON.stringify({ version: '0.1.1' }) });
+      if (path === '/.crosspoint/plugins/thecantinastore/manifest.json') {
+        return response({ text: JSON.stringify({ version: '0.1.13' }) });
       }
       if (path === '/.crosspoint/plugins/sample-newer/manifest.json') {
         return response({ text: JSON.stringify({ version: '1.1.0' }) });
@@ -177,7 +177,7 @@ test('browser hub loads custom catalogs and only offers directional updates', as
       if (path === '/.crosspoint/plugins/sampleplugin/manifest.json') {
         return response({ text: JSON.stringify({ version: '0.1.2.1' }) });
       }
-      if (path === '/.crosspoint/plugins/pluginhub/.catalog-cache.json') {
+      if (path === '/.crosspoint/plugins/thecantinastore/.catalog-cache.json') {
         return response({ text: JSON.stringify(communityCatalog) });
       }
       return response({ status: 404 });
@@ -189,6 +189,7 @@ test('browser hub loads custom catalogs and only offers directional updates', as
         return response({
           json: [
             { name: 'pluginhub', isDirectory: true },
+            { name: 'thecantinastore', isDirectory: true },
             { name: 'sample-newer', isDirectory: true },
             { name: 'sampleplugin', isDirectory: true },
           ],
@@ -224,7 +225,7 @@ test('browser hub loads custom catalogs and only offers directional updates', as
           }),
         };
       }
-      if (url.includes('/repos/crosspoint-reader/crosspoint-plugin-hub/releases/latest')) {
+      if (url.includes('/repos/jadehawk/TheCantinaStore.crosspoint-plugin/releases/latest')) {
         return { status: 200, body: JSON.stringify({ tag_name: 'v0.1.1' }) };
       }
       if (url === COMMUNITY_CATALOG) {
@@ -248,7 +249,7 @@ test('browser hub loads custom catalogs and only offers directional updates', as
   assert.equal(relayCalls[0], LIST_INDEX);
   assert.match(relayCalls[1], /TheCantinaStore\.crosspoint-plugin\/releases\/latest$/);
   assert.deepEqual(relayCalls.slice(2), [COMMUNITY_CATALOG]);
-  assert.equal(document.elements['ph-version'].textContent, 'Version: v0.1.1');
+  assert.equal(document.elements['ph-version'].textContent, 'Version: v0.1.13');
 
   const catalogRows = document.elements['ph-catalogs'].children;
   assert.equal(catalogRows.length, 1);
@@ -262,7 +263,7 @@ test('browser hub loads custom catalogs and only offers directional updates', as
   assert.equal(customRows[0].children[1].children[0].textContent, 'Browse');
 
   assert.equal(writes.length, 1);
-  assert.equal(writes[0].path, '/.crosspoint/plugin-hub.json');
+  assert.equal(writes[0].path, '/.crosspoint/thecantinastore.json');
   assert.deepEqual(JSON.parse(writes[0].data), {
     extraCatalogs: [PRIVATE_CATALOG],
   });
@@ -288,7 +289,7 @@ test('browser hub loads custom catalogs and only offers directional updates', as
   assert.match(document.elements['ph-status'].textContent, /3 plugins available, 1 update/);
 
   assert.deepEqual(fetchToSdCalls, [
-    { url: COMMUNITY_CATALOG, dest: '/.crosspoint/plugins/pluginhub/.catalog-cache.json' },
+    { url: COMMUNITY_CATALOG, dest: '/.crosspoint/plugins/thecantinastore/.catalog-cache.json' },
   ]);
   assert.equal(deletedCache, true);
 
@@ -310,7 +311,7 @@ test('browser hub loads custom catalogs and only offers directional updates', as
   assert.equal(relayCalls.at(-1), COMMUNITY_CATALOG);
 });
 
-test('browser hub adopts api.dir while migrating legacy config', async () => {
+test('browser store uses its own api.dir and never reads Plugin Hub config', async () => {
   const document = fakeDocument();
   const writes = [];
   const downloadPaths = [];
@@ -320,8 +321,8 @@ test('browser hub adopts api.dir while migrating legacy config', async () => {
     if (url.startsWith('/download?path=')) {
       const path = new URL(url, 'http://device').searchParams.get('path');
       downloadPaths.push(path);
-      if (path === '/plugins/pluginhub/config.json') {
-        return response({ status: 404 });
+      if (path === '/plugins/thecantinastore/config.json') {
+        return response({ text: JSON.stringify({ extraCatalogs: [PRIVATE_CATALOG] }) });
       }
       if (path === '/.crosspoint/plugin-hub.json') {
         return response({
@@ -334,7 +335,7 @@ test('browser hub adopts api.dir while migrating legacy config', async () => {
           }),
         });
       }
-      if (path === '/plugins/pluginhub/manifest.json') {
+      if (path === '/plugins/thecantinastore/manifest.json') {
         return response({ text: JSON.stringify({ version: '0.1.4' }) });
       }
       return response({ status: 404 });
@@ -348,7 +349,7 @@ test('browser hub adopts api.dir while migrating legacy config', async () => {
   }
 
   const api = {
-    dir: '/plugins/pluginhub/',
+    dir: '/plugins/thecantinastore/',
     async writeFile(path, dataB64) {
       writes.push({
         path,
@@ -367,7 +368,7 @@ test('browser hub adopts api.dir while migrating legacy config', async () => {
           }),
         };
       }
-      if (url.includes('/repos/crosspoint-reader/crosspoint-plugin-hub/releases/latest')) {
+      if (url.includes('/repos/jadehawk/TheCantinaStore.crosspoint-plugin/releases/latest')) {
         return { status: 200, body: JSON.stringify({ tag_name: 'v0.1.4' }) };
       }
       if (url === COMMUNITY_CATALOG) {
@@ -386,14 +387,13 @@ test('browser hub adopts api.dir while migrating legacy config', async () => {
   const render = await loadPlugin({ document, fetch });
   await render({ innerHTML: '' }, api);
 
-  assert.deepEqual(downloadPaths.slice(0, 3), [
-    '/plugins/pluginhub/config.json',
-    '/.crosspoint/plugin-hub.json',
-    '/plugins/pluginhub/manifest.json',
+  assert.deepEqual(downloadPaths, [
+    '/plugins/thecantinastore/config.json',
+    '/plugins/thecantinastore/manifest.json',
   ]);
   assert.equal(document.elements['ph-version'].textContent, 'Version: v0.1.4');
   assert.equal(writes.length, 1);
-  assert.equal(writes[0].path, '/plugins/pluginhub/config.json');
+  assert.equal(writes[0].path, '/plugins/thecantinastore/config.json');
   assert.deepEqual(JSON.parse(writes[0].data), {
     extraCatalogs: [PRIVATE_CATALOG],
   });
@@ -410,7 +410,7 @@ test('browser hub falls back to built-in catalog URLs when list index is unavail
   async function fetch(url) {
     if (url.startsWith('/download?path=')) {
       const path = new URL(url, 'http://device').searchParams.get('path');
-      if (path === '/.crosspoint/plugins/pluginhub/manifest.json') {
+      if (path === '/.crosspoint/plugins/thecantinastore/manifest.json') {
         return response({ text: JSON.stringify({ version: '0.1.6' }) });
       }
       return response({ status: 404 });
@@ -422,7 +422,7 @@ test('browser hub falls back to built-in catalog URLs when list index is unavail
   }
 
   const api = {
-    dir: '/.crosspoint/plugins/pluginhub',
+    dir: '/.crosspoint/plugins/thecantinastore',
     async writeFile() {
       return { ok: true };
     },
@@ -432,7 +432,7 @@ test('browser hub falls back to built-in catalog URLs when list index is unavail
       if (url === LIST_INDEX) {
         return { status: 503, error: 'index unavailable' };
       }
-      if (url.includes('/repos/crosspoint-reader/crosspoint-plugin-hub/releases/latest')) {
+      if (url.includes('/repos/jadehawk/TheCantinaStore.crosspoint-plugin/releases/latest')) {
         return { status: 200, body: JSON.stringify({ tag_name: 'v0.1.6' }) };
       }
       if (url === COMMUNITY_CATALOG) {
@@ -479,7 +479,7 @@ test('browser hub preserves alternate plugin root for updates and removal', asyn
   async function fetch(url, options = {}) {
     if (url.startsWith('/download?path=')) {
       const path = new URL(url, 'http://device').searchParams.get('path');
-      if (path === '/.crosspoint/plugins/pluginhub/manifest.json') {
+      if (path === '/.crosspoint/plugins/thecantinastore/manifest.json') {
         return response({ text: JSON.stringify({ version: '0.1.6' }) });
       }
       if (path === '/plugins/altplugin/manifest.json') {
@@ -511,7 +511,7 @@ test('browser hub preserves alternate plugin root for updates and removal', asyn
   }
 
   const api = {
-    dir: '/.crosspoint/plugins/pluginhub',
+    dir: '/.crosspoint/plugins/thecantinastore',
     async writeFile() {
       return { ok: true };
     },
@@ -525,7 +525,7 @@ test('browser hub preserves alternate plugin root for updates and removal', asyn
           }),
         };
       }
-      if (url.includes('/repos/crosspoint-reader/crosspoint-plugin-hub/releases/latest')) {
+      if (url.includes('/repos/jadehawk/TheCantinaStore.crosspoint-plugin/releases/latest')) {
         return { status: 200, body: JSON.stringify({ tag_name: 'v0.1.6' }) };
       }
       if (url === COMMUNITY_CATALOG) {
@@ -541,7 +541,7 @@ test('browser hub preserves alternate plugin root for updates and removal', asyn
 
   const render = await loadPlugin({
     document, fetch, URLSearchParams,
-    location: {search: '?plugin=pluginhub&manage=altplugin&action=reinstall'},
+    location: {search: '?plugin=thecantinastore&manage=altplugin&action=reinstall'},
     history: {replaceState: (...args) => changedLocations.push(args.at(-1))},
     confirm: (message) => {confirms.push(message); return true;}
   });
@@ -553,7 +553,7 @@ test('browser hub preserves alternate plugin root for updates and removal', asyn
   assert.equal(cards.length, 1);
   assert.equal(cards[0].children[1].children[0].textContent, 'Update');
   assert.match(confirms[0], /Reinstall altplugin/);
-  assert.deepEqual(changedLocations, ['/plugins?plugin=pluginhub']);
+  assert.deepEqual(changedLocations, ['/plugins?plugin=thecantinastore']);
   assert.deepEqual(fetchToSdCalls, [
     { url: 'https://example.test/altplugin/manifest.json', dest: '/plugins/altplugin/manifest.json' },
     { url: 'https://example.test/altplugin/plugin.js', dest: '/plugins/altplugin/plugin.js' },

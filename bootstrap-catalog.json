@@ -2,7 +2,7 @@
   "name": "The Cantina Store",
   "plugins": [
     {
-      "name": "pluginhub",
+      "name": "thecantinastore",
       "title": "The Cantina Store",
       "description": "Browse and install CrossPoint plugins.",
       "author": "Jadehawk",

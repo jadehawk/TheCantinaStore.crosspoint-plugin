@@ -1,4 +1,4 @@
-name: Refresh Plugin Catalog
+name: Refresh The Cantina Store Catalog
 
 on:
   workflow_dispatch:

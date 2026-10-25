@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.13 (2026-10-25)
+
+- Assign independent `thecantinastore` plugin ID and `/.crosspoint/plugins/thecantinastore/` install path for side-by-side testing with official Plugin Hub.
+- Isolate self-version detection, WebUI routing, browser configuration and catalog cache from `pluginhub`.
+- Package `thecantinastore-<version>.zip`; keep metadata validation for historical tags while enforcing new identity for v0.1.13 onward.
+- Keep catalogs, extension contracts and legacy firmware support unchanged.
+
 ## 0.1.11 (2026-10-23)
 
 - Align theme and wallpaper publication with the existing plugin-details contract.

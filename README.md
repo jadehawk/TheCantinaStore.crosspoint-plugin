@@ -1,6 +1,6 @@
 # The Cantina Store
 
-The Cantina Store is an independent development fork of [CrossPoint Plugin Hub](https://github.com/crosspoint-reader/crosspoint-plugin-hub), at [jadehawk/TheCantinaStore.crosspoint-plugin](https://github.com/jadehawk/TheCantinaStore.crosspoint-plugin). It keeps the installed ID `pluginhub` and the same installation layout, so it replaces Plugin Hub instead of installing alongside it. New catalog and compatibility features are tested here before being proposed upstream.
+The Cantina Store is an independent development fork of [CrossPoint Plugin Hub](https://github.com/crosspoint-reader/crosspoint-plugin-hub), at [jadehawk/TheCantinaStore.crosspoint-plugin](https://github.com/jadehawk/TheCantinaStore.crosspoint-plugin). It keeps upstream Plugin Hub functionality and catalog contracts, but has its own plugin ID `thecantinastore` and installation folder `/.crosspoint/plugins/thecantinastore/`, allowing installation alongside official `pluginhub`. New catalog and compatibility features are tested here before being proposed upstream.
 
 ## Upstream Plugin Hub reference
 
@@ -72,10 +72,10 @@ plugin.js
 README.md
 ```
 
-The firmware bootstrap installs them under:
+The Cantina Store can be manually installed alongside Plugin Hub under:
 
 ```text
-/.crosspoint/plugins/pluginhub/
+/.crosspoint/plugins/thecantinastore/
 ```
 
 CrossPoint can discover plugins from:
@@ -90,9 +90,9 @@ Plugin updates preserve the existing discovered plugin root.
 
 ## Browser WebUI
 
-**Release and stable synchronization:** The publishing workflows validate the release-tag versions and ensure both display titles are exactly `Plugin Hub`. The release package archives those files unchanged. Once a stable release is published, the promotion workflow aligns `stable` to the newest eligible `main` commit; catalog refreshes do the same after their generated commits. This keeps the bootstrap branch fully caught up without exposing unreleased manifest, device or browser-plugin code. The GitHub Release keeps its immutable version tag.
+**Release and stable synchronization:** The publishing workflows validate the release-tag versions and ensure both display titles are exactly `The Cantina Store` for new releases. The release package archives those files unchanged. Once a stable release is published, the promotion workflow aligns `stable` to the newest eligible `main` commit; catalog refreshes do the same after their generated commits. This keeps the bootstrap branch fully caught up without exposing unreleased manifest, device or browser-plugin code. The GitHub Release keeps its immutable version tag.
 
-`plugin.js` provides the browser-side management UI wherever the firmware hosts browser plugins. It can browse Community, install/update/reinstall/remove plugins, show installed/catalog versions, and use custom catalog URLs. Action buttons are right-aligned, with yellow **Reinstall** and red **Remove** controls. A browser host may optionally open Plugin Hub with a selected plugin and a reinstall request; Plugin Hub handles it through the existing catalog installer, without requiring any special firmware implementation. Uninstalling a plugin removes its installation files; independently stored plugin data is left untouched if the firmware provides such storage.
+The Cantina Store's `plugin.js` provides the browser-side management UI wherever the firmware hosts browser plugins. It can browse Community, install/update/reinstall/remove plugins, show installed/catalog versions, and use custom catalog URLs. Action buttons are right-aligned, with yellow **Reinstall** and red **Remove** controls. A browser host may optionally open Plugin Hub with a selected plugin and a reinstall request; Plugin Hub handles it through the existing catalog installer, without requiring any special firmware implementation. Uninstalling a plugin removes its installation files; independently stored plugin data is left untouched if the firmware provides such storage.
 
 Custom catalogs remain separate from the built-in Community catalog and are a browser-side Plugin Hub feature.
 

@@ -1,12 +1,12 @@
-// Plugin Hub browser UI — manage CrossPoint plugins from the generated Hub
+// The Cantina Store browser UI — manage CrossPoint plugins from the generated store
 // catalog plus optional user-supplied catalogs.
 CrossPoint.registerPlugin(async (container, api) => {
-  const LEGACY_CONFIG_PATH = '/.crosspoint/plugin-hub.json';
+  const FALLBACK_CONFIG_PATH = '/.crosspoint/thecantinastore.json';
   const PLUGIN_DIR =
     api && typeof api.dir === 'string' && api.dir.startsWith('/')
       ? api.dir.replace(/\/+$/, '')
       : null;
-  const CONFIG_PATH = PLUGIN_DIR ? PLUGIN_DIR + '/config.json' : LEGACY_CONFIG_PATH;
+  const CONFIG_PATH = PLUGIN_DIR ? PLUGIN_DIR + '/config.json' : FALLBACK_CONFIG_PATH;
   const PLUGIN_ROOTS = ['/.crosspoint/plugins', '/plugins', '/.plugins'];
   const PLUGINS_DIR = PLUGIN_ROOTS[0];
   const RELEASE_API_URL = 'https://api.github.com/repos/jadehawk/TheCantinaStore.crosspoint-plugin/releases/latest';
@@ -67,7 +67,7 @@ CrossPoint.registerPlugin(async (container, api) => {
   function clearManagementIntent() {
     pendingReinstall = false;
     if (typeof history !== 'undefined' && history.replaceState) {
-      history.replaceState(null, '', '/plugins?plugin=pluginhub');
+      history.replaceState(null, '', '/plugins?plugin=thecantinastore');
     }
   }
   const status = (text) => {
@@ -137,10 +137,6 @@ CrossPoint.registerPlugin(async (container, api) => {
     const current = await readJsonFile(CONFIG_PATH);
     if (current) return current;
 
-    if (CONFIG_PATH !== LEGACY_CONFIG_PATH) {
-      const legacy = await readJsonFile(LEGACY_CONFIG_PATH);
-      if (legacy) return legacy;
-    }
     return {};
   }
 
@@ -185,7 +181,7 @@ CrossPoint.registerPlugin(async (container, api) => {
       if (manifest && manifest.version) return manifest.version;
     }
     const installed = await installedPlugins();
-    const dir = installed.get('pluginhub');
+    const dir = installed.get('thecantinastore');
     return dir ? installedVersion(dir) : null;
   }
 
@@ -266,7 +262,7 @@ CrossPoint.registerPlugin(async (container, api) => {
   }
 
   async function fetchLargeText(url) {
-    const cachePath = (PLUGIN_DIR || PLUGINS_DIR + '/pluginhub') + '/.catalog-cache.json';
+    const cachePath = (PLUGIN_DIR || PLUGINS_DIR + '/thecantinastore') + '/.catalog-cache.json';
     const response = await api.fetchToSd(url, cachePath, {});
     if (response.error || (response.status && (response.status < 200 || response.status >= 300))) {
       throw new Error('download failed (' + (response.status || response.error) + ')');

@@ -1,4 +1,4 @@
-name: Promote Stable Plugin Hub Release
+name: Promote Stable The Cantina Store Release
 
 on:
   release:
