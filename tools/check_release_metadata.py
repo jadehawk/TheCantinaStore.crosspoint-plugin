@@ -20,8 +20,9 @@ def validate(manifest: dict, device: dict, tag: str) -> None:
             name == "device.json" and not new_release and metadata.get("version") is None
         ):
             raise ValueError(f"{name} version must match release tag {tag}")
-        if new_release and metadata.get("title") != "Plugin Hub":
-            raise ValueError(f"{name} title must be 'Plugin Hub' (no version suffix)")
+        expected_title = "The Cantina Store" if tuple(map(int, version.split("."))) >= (0, 1, 12) else "Plugin Hub"
+        if new_release and metadata.get("title") != expected_title:
+            raise ValueError(f"{name} title must be '{expected_title}' (no version suffix)")
 
 
 def read_file(name: str, tag: str | None) -> dict:

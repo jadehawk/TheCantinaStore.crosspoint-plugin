@@ -1,12 +1,12 @@
 {
-  "name": "Plugin Hub",
+  "name": "The Cantina Store",
   "plugins": [
     {
       "name": "pluginhub",
-      "title": "Plugin Hub",
+      "title": "The Cantina Store",
       "description": "Browse and install CrossPoint plugins.",
       "author": "Jadehawk",
-      "base": "https://raw.githubusercontent.com/crosspoint-reader/crosspoint-plugin-hub/stable/",
+      "base": "https://raw.githubusercontent.com/jadehawk/TheCantinaStore.crosspoint-plugin/stable/",
       "files": [
         "manifest.json",
         "device.json",

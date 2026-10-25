@@ -5,11 +5,11 @@ import vm from 'node:vm';
 
 const root = new URL('../', import.meta.url);
 const UNION_CATALOG =
-  'https://raw.githubusercontent.com/crosspoint-reader/crosspoint-plugin-hub/main/catalog.json';
+  'https://raw.githubusercontent.com/jadehawk/TheCantinaStore.crosspoint-plugin/main/catalog.json';
 const COMMUNITY_CATALOG =
-  'https://raw.githubusercontent.com/crosspoint-reader/crosspoint-plugin-hub/main/community-catalog.json';
+  'https://raw.githubusercontent.com/jadehawk/TheCantinaStore.crosspoint-plugin/main/community-catalog.json';
 const LIST_INDEX =
-  'https://raw.githubusercontent.com/crosspoint-reader/crosspoint-plugin-hub/main/catalog-lists.json';
+  'https://raw.githubusercontent.com/jadehawk/TheCantinaStore.crosspoint-plugin/main/catalog-lists.json';
 const PRIVATE_CATALOG = 'https://example.test/private/catalog.json';
 
 class Element {
@@ -246,7 +246,7 @@ test('browser hub loads custom catalogs and only offers directional updates', as
 
   assert.equal(relayCalls.length, 3);
   assert.equal(relayCalls[0], LIST_INDEX);
-  assert.match(relayCalls[1], /crosspoint-plugin-hub\/releases\/latest$/);
+  assert.match(relayCalls[1], /TheCantinaStore\.crosspoint-plugin\/releases\/latest$/);
   assert.deepEqual(relayCalls.slice(2), [COMMUNITY_CATALOG]);
   assert.equal(document.elements['ph-version'].textContent, 'Version: v0.1.1');
 

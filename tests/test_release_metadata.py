@@ -34,6 +34,14 @@ class ReleaseMetadataTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "invalid release tag"):
             validate(self.manifest, self.device, "0.1.8")
 
+    def test_cantina_store_release_title(self):
+        self.manifest.update(title="The Cantina Store", version="0.1.12")
+        self.device.update(title="The Cantina Store", version="0.1.12")
+        validate(self.manifest, self.device, "v0.1.12")
+        self.device["title"] = "Plugin Hub"
+        with self.assertRaisesRegex(ValueError, "The Cantina Store"):
+            validate(self.manifest, self.device, "v0.1.12")
+
     def test_legacy_tag_remains_repackageable(self):
         self.manifest.update(title="Plugin Hub v0.1.7", version="0.1.7")
         self.device.update(title="Plugin Hub v0.1.7")

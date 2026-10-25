@@ -39,7 +39,7 @@ SEEDS = {
     "theme-pack": ("jadehawk/halo.crosspoint-theme",),
     "wallpaper-pack": ("jadehawk/starwars.crosspoint-wallpaper",),
 }
-BASE_URL = "https://raw.githubusercontent.com/crosspoint-reader/crosspoint-plugin-hub/main/"
+BASE_URL = "https://raw.githubusercontent.com/jadehawk/TheCantinaStore.crosspoint-plugin/main/"
 DETAILS_BY_KIND = {"theme-pack": "themes", "wallpaper-pack": "wallpapers"}
 
 
@@ -332,7 +332,7 @@ def write_if_changed(path, payload):
     return True
 
 
-def build(client, output:Path, legacy_index:Path, catalog_repository="crosspoint-reader/crosspoint-plugin-hub",
+def build(client, output:Path, legacy_index:Path, catalog_repository="jadehawk/TheCantinaStore.crosspoint-plugin",
           catalog_ref="main", seeds=None, excluded=None):
     output.mkdir(parents=True,exist_ok=True)
     collected = {}
@@ -370,7 +370,7 @@ def main():
     p.add_argument("--output-dir",default=".")
     p.add_argument("--legacy-index",default="catalog-lists.json")
     p.add_argument("--blacklist",default="blacklist.json")
-    p.add_argument("--catalog-repository",default=os.getenv("GITHUB_REPOSITORY","crosspoint-reader/crosspoint-plugin-hub"))
+    p.add_argument("--catalog-repository",default=os.getenv("GITHUB_REPOSITORY","jadehawk/TheCantinaStore.crosspoint-plugin"))
     p.add_argument("--catalog-ref",default="main")
     args=p.parse_args()
     client=GitHubClient(os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN"))

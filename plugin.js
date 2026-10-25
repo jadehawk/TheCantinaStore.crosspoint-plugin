@@ -9,13 +9,13 @@ CrossPoint.registerPlugin(async (container, api) => {
   const CONFIG_PATH = PLUGIN_DIR ? PLUGIN_DIR + '/config.json' : LEGACY_CONFIG_PATH;
   const PLUGIN_ROOTS = ['/.crosspoint/plugins', '/plugins', '/.plugins'];
   const PLUGINS_DIR = PLUGIN_ROOTS[0];
-  const RELEASE_API_URL = 'https://api.github.com/repos/crosspoint-reader/crosspoint-plugin-hub/releases/latest';
+  const RELEASE_API_URL = 'https://api.github.com/repos/jadehawk/TheCantinaStore.crosspoint-plugin/releases/latest';
   const UNION_CATALOG =
-    'https://raw.githubusercontent.com/crosspoint-reader/crosspoint-plugin-hub/main/catalog.json';
+    'https://raw.githubusercontent.com/jadehawk/TheCantinaStore.crosspoint-plugin/main/catalog.json';
   const COMMUNITY_CATALOG =
-    'https://raw.githubusercontent.com/crosspoint-reader/crosspoint-plugin-hub/main/community-catalog.json';
+    'https://raw.githubusercontent.com/jadehawk/TheCantinaStore.crosspoint-plugin/main/community-catalog.json';
   const LIST_INDEX_URL =
-    'https://raw.githubusercontent.com/crosspoint-reader/crosspoint-plugin-hub/main/catalog-lists.json';
+    'https://raw.githubusercontent.com/jadehawk/TheCantinaStore.crosspoint-plugin/main/catalog-lists.json';
 
   function defaultBuiltInCatalogs() {
     return [
@@ -42,7 +42,7 @@ CrossPoint.registerPlugin(async (container, api) => {
     '#ph-list .ph-btn-reinstall{background:#e8bf42!important;border-color:#b18d20!important;color:#202020!important}' +
     '#ph-list .ph-btn-remove,.ph-btn-remove{background:#bc3636!important;border-color:#922727!important;color:#fff!important}' +
     '</style>' +
-    '<h2>Plugin Hub</h2>' +
+    '<h2>The Cantina Store</h2>' +
     '<p id="ph-version" style="color:#666">Version: checking...</p>' +
     '<h3 style="margin:0.5em 0 0.2em">Browse plugins</h3>' +
     '<div id="ph-catalogs"></div>' +
