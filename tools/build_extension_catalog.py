@@ -13,7 +13,9 @@ import io
 import json
 import os
 import re
+import struct
 import sys
+import zlib
 import urllib.parse
 import zipfile
 from collections import defaultdict
@@ -125,6 +127,25 @@ def verify_bmp(raw, dimensions):
             "truncated BMP")
 
 
+def sleep_image_path(relative, theme_id):
+    prefix = f"themes/{theme_id}/sleep/"
+    if not relative.startswith(prefix):
+        return False
+    name = relative[len(prefix):]
+    return (5 <= len(name) <= 84 and not name.startswith(".") and ".." not in name and
+            re.fullmatch(r"[A-Za-z0-9_-][A-Za-z0-9_.-]*\.cpb", name) is not None)
+
+
+def verify_sleep_cpb(raw, resolution):
+    require(len(raw) >= 20, "theme sleep CPB header missing")
+    magic, version, flags, width, height, stride, size, checksum = struct.unpack_from("<4sBBHHHII", raw)
+    require(magic == b"CPTB" and version == 1 and flags == 1 and
+            width == resolution["width"] and height == resolution["height"] and
+            stride == (width + 7) // 8 and size == len(raw) - 20 and
+            size == stride * height and (zlib.crc32(raw[20:]) & 0xffffffff) == checksum,
+            "theme sleep bitmap CRC or resolution invalid")
+
+
 def check_asset(raw: bytes, ident: str, kind: str, tag: str):
     suffix = KINDS[kind][0]
     expected_prefix = f"{ident}.{suffix}/"
@@ -132,7 +153,8 @@ def check_asset(raw: bytes, ident: str, kind: str, tag: str):
     try:
         archive = zipfile.ZipFile(io.BytesIO(raw))
         infos = archive.infolist()
-        require(2 <= len(infos) <= MAX_MEMBERS, "invalid ZIP member count")
+        require(len(infos) >= 2 and (kind == "theme-pack" or len(infos) <= MAX_MEMBERS),
+                "invalid ZIP member count")
         names = [i.filename for i in infos]
         require(len(names) == len(set(names)), "duplicate archive member paths")
         require(all(n.startswith(expected_prefix) and safe_path(n) and not n.endswith("/") for n in names),
@@ -145,7 +167,23 @@ def check_asset(raw: bytes, ident: str, kind: str, tag: str):
         contents = {i.filename[len(expected_prefix):]: archive.read(i) for i in infos}
         manifest = json.loads(contents["manifest.json"].decode("utf-8"))
         declared = safe_manifest(manifest, ident, kind, tag)
-        require(set(contents) == set(declared), "release ZIP does not exactly match manifest file list")
+        unexpected = set(contents) - set(declared)
+        if kind == "theme-pack":
+            for theme in manifest["themes"]:
+                meta = json.loads(contents[theme["path"]].decode("utf-8"))
+                assets = meta.get("assets", {})
+                gallery = assets.get("sleep_art")
+                prefix = f"themes/{theme['id']}/sleep"
+                if gallery is None:
+                    continue
+                require(gallery == prefix, "theme sleep gallery must be a scoped directory")
+                members = {f for f in unexpected if sleep_image_path(f, theme["id"])}
+                require(bool(members), "theme sleep directory cannot be empty")
+                for member in members:
+                    verify_sleep_cpb(contents[member], manifest["target_resolution"])
+                unexpected -= members
+        require(not unexpected and set(declared).issubset(contents),
+                "release ZIP contains unrecognized files or omits required metadata")
         details_bytes = contents["DETAILS.md"]
         require(0 < len(details_bytes) <= MAX_DETAILS_SOURCE_BYTES,
                 "DETAILS.md missing or exceeds size limit")
