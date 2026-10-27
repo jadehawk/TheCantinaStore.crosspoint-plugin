@@ -128,7 +128,10 @@ crosspoint-wallpaper GitHub topics. It validates the latest non-draft,
 non-prerelease GitHub releases, version matching, per-package ZIP names,
 ZIP safety, the embedded manifests and file allowlists, BMP dimensions and
 the declared target resolutions. Release download URL, size and SHA-256 are
-recorded. Repository blacklists apply. Colliding identities are quarantined
+recorded. Theme sleep galleries support either legacy `.cpb` images or native grayscale
+`.bmp` images, but not both in one gallery. BMP galleries require the theme to
+advertise `theme.sleep-grayscale.v1`; the catalog validates each image against
+the declared target resolution. Repository blacklists apply. Colliding identities are quarantined
 in duplicate-extension-ids.json; other valid collections remain published.
 
 Compatible firmware must independently verify ZIP content and checksum, route each kind to its proper SD root, protect against partial installs, and only offer supported capabilities. Plugin Hub `device.json` adds optional `browse.capability_lists_url`; its legacy `browse.lists_url` stays unchanged and the browser WebUI plugin installer remains plugin-only. Only the new firmware's opt-in consumer uses the extended index.

@@ -133,7 +133,7 @@ def sleep_image_path(relative, theme_id):
         return False
     name = relative[len(prefix):]
     return (5 <= len(name) <= 84 and not name.startswith(".") and ".." not in name and
-            re.fullmatch(r"[A-Za-z0-9_-][A-Za-z0-9_.-]*\.cpb", name) is not None)
+            re.fullmatch(r"[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:cpb|bmp)", name) is not None)
 
 
 def verify_sleep_cpb(raw, resolution):
@@ -179,8 +179,15 @@ def check_asset(raw: bytes, ident: str, kind: str, tag: str):
                 require(gallery == prefix, "theme sleep gallery must be a scoped directory")
                 members = {f for f in unexpected if sleep_image_path(f, theme["id"])}
                 require(bool(members), "theme sleep directory cannot be empty")
+                types = {name.rsplit('.', 1)[-1] for name in members}
+                require(len(types) == 1, "theme sleep gallery cannot mix BMP and CPB images")
+                require(("bmp" in types) == ("theme.sleep-grayscale.v1" in theme["requires"]),
+                        "theme grayscale gallery capability mismatch")
                 for member in members:
-                    verify_sleep_cpb(contents[member], manifest["target_resolution"])
+                    if member.endswith(".bmp"):
+                        verify_bmp(contents[member], manifest["target_resolution"])
+                    else:
+                        verify_sleep_cpb(contents[member], manifest["target_resolution"])
                 unexpected -= members
         require(not unexpected and set(declared).issubset(contents),
                 "release ZIP contains unrecognized files or omits required metadata")

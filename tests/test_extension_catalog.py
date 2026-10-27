@@ -211,6 +211,41 @@ class ExtensionCatalogTests(unittest.TestCase):
         self.assertEqual(len(catalog[0]["variants"]),2)
         self.assertEqual({v["target_resolution"]["width"] for v in catalog[0]["variants"]},{528,480})
 
+    def test_theme_sleep_grayscale_bmp_and_legacy_cpb_validation(self):
+        def make_theme(gallery_files, grayscale_capability=True):
+            manifest, files = payload("snoopy", "theme-pack", resolution=(2, 3))
+            scene = {"assets": {"sleep_art": "themes/snoopy/sleep"}}
+            files["themes/snoopy/theme.json"] = json.dumps(scene).encode()
+            if grayscale_capability:
+                manifest["themes"][0]["requires"].append("theme.sleep-grayscale.v1")
+            files["manifest.json"] = json.dumps(manifest).encode()
+            files.update(gallery_files)
+            stream = io.BytesIO()
+            with zipfile.ZipFile(stream, "w", zipfile.ZIP_DEFLATED) as out:
+                for name, data in files.items():
+                    out.writestr(f"snoopy.crosspoint-theme/{name}", data)
+            return stream.getvalue()
+
+        def cpb():
+            raw = bytes(3)
+            header = struct.pack("<4sBBHHHII", b"CPTB", 1, 1, 2, 3, 1,
+                                 len(raw), ext.zlib.crc32(raw) & 0xffffffff)
+            return header + raw
+
+        bmp_path = "themes/snoopy/sleep/scene-01.bmp"
+        cpb_path = "themes/snoopy/sleep/scene-01.cpb"
+        ext.check_asset(make_theme({bmp_path: bmp(2, 3)}), "snoopy", "theme-pack", "v0.1.1")
+        ext.check_asset(make_theme({cpb_path: cpb()}, False), "snoopy", "theme-pack", "v0.1.1")
+        with self.assertRaisesRegex(ext.CatalogError, "capability mismatch"):
+            ext.check_asset(make_theme({bmp_path: bmp(2, 3)}, False),
+                            "snoopy", "theme-pack", "v0.1.1")
+        with self.assertRaisesRegex(ext.CatalogError, "cannot mix"):
+            ext.check_asset(make_theme({bmp_path: bmp(2, 3), cpb_path: cpb()}),
+                            "snoopy", "theme-pack", "v0.1.1")
+        with self.assertRaisesRegex(ext.CatalogError, "dimensions mismatch"):
+            ext.check_asset(make_theme({bmp_path: bmp(3, 2)}),
+                            "snoopy", "theme-pack", "v0.1.1")
+
     def test_theme_manifest(self):
         _, raw = archive("halo","theme-pack")
         m = ext.check_asset(raw,"halo","theme-pack","v0.1.1")
