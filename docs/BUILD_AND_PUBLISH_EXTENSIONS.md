@@ -42,7 +42,7 @@ Capabilities/primitives exposed by the Razor-Crest SD-theme firmware:
 
 Additional supported theme properties: `reference` portrait width/height and `adapt` `center-crop` or `scale-to-fit`; required style fields `header_background`, `header_foreground`, `selection`, `row_separators`, `corners`, `chamfer_cut`; optional chamfer cut variants and `settings_navigation`. Text sources are **only** `screen_title`, `date`, `device_name`, `book_title`, `book_author`, `progress_percent`, `tagline`, `loading_percent`. A scene cannot execute code or invent callbacks. Multiple `sleep_art` entries rotate for regular Dark/Light sleep entry, **not timed Custom sleep wakeups**. Full field/operation bounds are in the [theme contract](https://github.com/jadehawk/halo.crosspoint-theme/blob/main/docs/THEME_CONTRACT.md).
 
-Use the author-hosted validator, tests and packer, and only release a checked ZIP containing exactly one installable folder. Add GitHub topic `crosspoint-theme`, stable Release tag `v<manifest-version>`, and the asset **`<name>-<version>.crosspoint-theme.zip`**. The catalog scanner independently validates and records checksum and URL.
+Build two independently validated archives from one theme source repository: **`<name>-x3-<version>.crosspoint-theme.zip`** targeting 528 × 792, and **`<name>-x4plus-<version>.crosspoint-theme.zip`** targeting 480 × 800. Each archive has its own exact `manifest.files`, matching `manifest.target_resolution`, and only the CPBs needed by that resolution; retain the same internal manifest name, theme IDs, fonts, and shared styles. Both ZIP roots must be `<name>.crosspoint-theme/` (do not use `-x3`/`-x4plus` inside the archive). Publish both assets under one stable release tag `v<manifest-version>` with GitHub topic `crosspoint-theme`. Cantina groups them into one theme listing and firmware downloads the matching variant. GitHub Actions may prepare both assets; do not auto-release personal/copyrighted test themes without explicit authorization.
 
 ## 3. Standalone wallpaper pack
 
@@ -86,9 +86,9 @@ Before publishing a tag, verify:
 5. The installed list shows a description, not an author subtitle; the
    author's credit is retained in item details. Existing installations
    continue to work during a format transition.
-6. Wallpaper variants have matching collection metadata and distinct,
-   verified resolutions. Plugin Hub chooses **one** correct variant, not
-   every ZIP or a hard-coded firmware model name.
+6. Wallpaper **and theme** variants have matching collection metadata and
+   distinct verified resolutions. Plugin Hub chooses **one** matching ZIP,
+   never a hard-coded model name; theme install identity remains stable.
 7. Run author-side tests, the Plugin Hub catalog fixture suite, firmware
    inspection, and actual X3/X4Pro touch/button tests before publishing.
    Keep old release tags immutable; changing the format requires a **new
@@ -99,7 +99,7 @@ Before publishing a tag, verify:
 1. Make the GitHub repo public and set its appropriate topic: `crosspoint-plugin`, `crosspoint-theme`, or `crosspoint-wallpaper`.
 2. Follow the matching payload layout, exact manifest/schema and ZIP naming rules above; keep development files **outside** the installable archive.
 3. Validate with the repo's own tests/packer. Check that releases match `MAJOR.MINOR.PATCH` and include immutable, install-only ZIP assets. Keep authorship/redistribution rights clear.
-4. Publish a **non-draft, non-prerelease** Release at a tag matching the manifest version (for themes and wallpaper assets use `vMAJOR.MINOR.PATCH`).
+4. Publish a **non-draft, non-prerelease** Release at a tag matching the manifest version (for themes and wallpaper assets use `vMAJOR.MINOR.PATCH`). For theme and wallpaper variants, attach each independently validated resolution-specific ZIP to that **same Release**, not separate tags.
 5. The Plugin Hub catalog GitHub Action runs every **three hours** or when manually dispatched. It discovers eligible repos by topics (plugin name fallback also supported), checks release assets, identity, duplicate IDs, sizes, files, manifests, and wallpaper image dimensions, and publishes valid items. Invalid/conflicting entries may be omitted or quarantined in `duplicate-extension-ids.json`; a catalog entry isn't a security endorsement. Existing firmware that lacks capabilities must not show theme/wallpaper install controls.
 6. Find results in `community-themes.json`, `community-wallpapers.json`, and `catalog-lists-capabilities.json`. Existing plugins remain in their legacy `catalog-lists.json` / Community catalog. Ordinary compliant repos do not require a Plugin Hub PR or allowlist exemption.
 

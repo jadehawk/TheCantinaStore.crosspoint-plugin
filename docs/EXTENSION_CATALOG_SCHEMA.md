@@ -50,12 +50,26 @@ community-themes.json is a JSON object containing:
 - generated_at: UTC timestamp, retained when the content does not change
 - items: list of theme collection entries
 
-Each theme collection entry contains name, title, kind, author, description,
-version, repository, release, release_url, requires, asset_url, sha256, bytes,
-and themes. The themes array contains id, title and its own requires array.
-Consumers must check both the list-level and per-theme capabilities. The
-release asset is an immutable, verified, single-root ZIP installed at
-/.crosspoint/themes/<name>.crosspoint-theme/.
+Each theme collection entry contains `name`, `title`, `kind`, `author`,
+`description`, `version`, `repository`, `release`, `release_url`,
+`requires`, `themes`, and `variants`. The `themes` array contains its
+own IDs, titles and capabilities.
+
+Each theme `variants` entry has `name`, `target_resolution: {width,height}`,
+`asset_url`, `sha256`, and `bytes`, matching wallpaper variants. The theme
+collection ID and every embedded `manifest.name` are **identical** (for
+example, `snoopy`). `variants[].name` is only the release filename prefix,
+such as `snoopy-x3` or `snoopy-x4plus`; it is not an installed theme ID.
+Each variant declares `manifest.target_resolution` and lists only the
+resolution's resources. Duplicate resolutions and contradictory metadata
+are rejected.
+
+The device selects exactly one ZIP for its measured display resolution and
+verifies its checksum, metadata, and file list before installation. Regardless
+of ZIP filename, the archive root is `<name>.crosspoint-theme/` and the
+installed folder is `/.crosspoint/themes/<name>.crosspoint-theme/`.
+No firmware name is hard-coded in device selection.
+
 
 ## Wallpaper catalog
 

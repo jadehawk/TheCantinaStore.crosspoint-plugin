@@ -91,6 +91,10 @@ def safe_manifest(manifest, ident, kind, tag):
                 all(type(resolution[k]) is int and 0 < resolution[k] <= 3072 for k in ("width", "height")),
                 "wallpaper variant requires target_resolution")
     else:
+        resolution = manifest.get("target_resolution")
+        require(isinstance(resolution, dict) and set(resolution) == {"width", "height"} and
+                all(type(resolution[k]) is int and 0 < resolution[k] <= 3072 for k in ("width", "height")),
+                "theme variant requires target_resolution")
         themes = manifest.get("themes")
         require(isinstance(themes, list) and 1 <= len(themes) <= 16, "missing or invalid themes")
         for theme in themes:
@@ -181,6 +185,10 @@ def stable_assets(client, repo, kind):
         require(filename.endswith(ending), "release asset naming/version mismatch")
         ident = filename[:-len(ending)]
         require(ID.fullmatch(ident) is not None, "unsafe package ID in release asset name")
+        # Theme release filename carries a resolution variant suffix, while
+        # the ZIP root and embedded name carry the *stable* theme identity.
+        # Never assume that only two device sizes can ever exist.
+        package_id = ident
         url = asset.get("browser_download_url")
         require(isinstance(url, str) and url.startswith(
                 f"https://github.com/{full_name}/releases/download/{urllib.parse.quote(tag, safe='')}/"),
@@ -189,12 +197,25 @@ def stable_assets(client, repo, kind):
                 0 < asset["size"] <= MAX_ZIP_BYTES, "release asset too large")
         raw = client.fetch_bytes_url(url, MAX_ZIP_BYTES)
         require(len(raw) == asset["size"], "downloaded ZIP size mismatch")
-        manifest = check_asset(raw, ident, kind, tag)
+        if kind == "theme-pack":
+            try:
+                with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+                    roots = {i.filename.split("/", 1)[0] for i in archive.infolist()}
+            except zipfile.BadZipFile as exc:
+                raise CatalogError("corrupt theme ZIP") from exc
+            require(len(roots) == 1, "theme variant has ambiguous ZIP roots")
+            root_name = next(iter(roots))
+            require(root_name.endswith(".crosspoint-theme"), "missing theme ZIP root")
+            package_id = root_name[:-len(".crosspoint-theme")]
+            require(ID.fullmatch(package_id) is not None and
+                    ident.startswith(package_id + "-") and len(ident) > len(package_id) + 1,
+                    "theme release asset identity must extend the stable collection ID")
+        manifest = check_asset(raw, package_id, kind, tag)
         with zipfile.ZipFile(io.BytesIO(raw)) as verified_zip:
-            member = f"{ident}.{suffix}/DETAILS.md"
+            member = f"{package_id}.{suffix}/DETAILS.md"
             details_markdown = verified_zip.read(member).decode("utf-8")
         results.append({
-            "name": ident, "title": manifest["title"], "author": manifest["author"],
+            "name": package_id, "variant_name": ident, "title": manifest["title"], "author": manifest["author"],
             "manifest": manifest, "asset_url": url, "bytes": len(raw),
             "sha256": hashlib.sha256(raw).hexdigest(), "tag": tag,
             "release_url": release.get("html_url", ""), "repository": full_name,
@@ -263,20 +284,42 @@ def catalog_items(packages, kind):
                             for p in sorted(variants,key=lambda v:v["name"])],
             })
     else:
+        grouped = defaultdict(list)
+        for package in packages:
+            grouped[(package["repository"].lower(), package["name"])].append(package)
         items = []
-        for p in packages:
-            m = p["manifest"]
+        for (_, collection), variants in grouped.items():
+            resolutions = [(v["manifest"]["target_resolution"]["width"],
+                            v["manifest"]["target_resolution"]["height"]) for v in variants]
+            metadata = {
+                (v["manifest"]["version"], v["author"], v["title"],
+                 v["manifest"]["description"],
+                 json.dumps(v["manifest"]["themes"], sort_keys=True),
+                 json.dumps(normalize_compatibility(v["manifest"].get("compatibility")), sort_keys=True),
+                 v["_details_markdown"])
+                for v in variants
+            }
+            if len(metadata) != 1 or len(set(resolutions)) != len(resolutions):
+                collisions.append({"kind": kind, "collection": collection, "repository": variants[0]["repository"],
+                                   "reason": "theme variant metadata or resolution conflict"})
+                continue
+            first = variants[0]
+            m = first["manifest"]
             items.append({
-                "name":p["name"],"title":p["title"],"kind":kind,"author":p["author"],
-                "description":m["description"],
-                "_details_markdown":p.get("_details_markdown", ""), "version":m["version"],
-                "repository":p["repository"],"release":p["tag"],"release_url":p["release_url"],
-                "requires":["theme.sd.v1"],"asset_url":p["asset_url"],
-                "sha256":p["sha256"],"bytes":p["bytes"],
-                **({"compatibility":normalize_compatibility(m["compatibility"])}
+                "name": collection, "title": first["title"], "kind": kind, "author": first["author"],
+                "description": m["description"],
+                "_details_markdown": first.get("_details_markdown", ""), "version": m["version"],
+                "repository": first["repository"], "release": first["tag"],
+                "release_url": first["release_url"], "requires": ["theme.sd.v1"],
+                **({"compatibility": normalize_compatibility(m["compatibility"])}
                    if m.get("compatibility") else {}),
-                "themes":[{"id":t["id"],"title":t.get("title",t["id"]),
-                           "requires":t["requires"]} for t in m["themes"]]
+                "themes": [{"id": t["id"], "title": t.get("title", t["id"]),
+                            "requires": t["requires"]} for t in m["themes"]],
+                "variants": [
+                    {"name": p["variant_name"], "target_resolution": p["manifest"]["target_resolution"],
+                     "asset_url": p["asset_url"], "sha256": p["sha256"], "bytes": p["bytes"]}
+                    for p in sorted(variants, key=lambda v: v["variant_name"])
+                ],
             })
     # Ambiguous identities across repositories are quarantined, not arbitrarily chosen.
     by_name = defaultdict(list)

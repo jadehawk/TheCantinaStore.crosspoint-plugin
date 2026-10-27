@@ -31,6 +31,7 @@ def payload(name, kind, collection=None, resolution=(2, 3)):
         manifest["files"].append("wallpapers/test.bmp")
         files["wallpapers/test.bmp"] = bmp(*resolution)
     else:
+        manifest["target_resolution"] = {"width": resolution[0], "height": resolution[1]}
         manifest["themes"] = [{
             "id": name, "title": name.upper(),
             "path": f"themes/{name}/theme.json",
@@ -76,7 +77,7 @@ class ExtensionCatalogTests(unittest.TestCase):
             ext.safe_manifest(manifest, ident, kind, "v0.1.1")
             item_source = {"name": ident, "manifest": manifest, "repository": "example/asset",
                            "title": ident, "author": "Tester", "tag": "v0.1.1",
-                           "asset_url": "", "sha256": "0" * 64, "bytes": 512, "release_url": ""}
+                           "variant_name": ident+"-x3", "asset_url": "", "sha256": "0" * 64, "bytes": 512, "release_url": "", "_details_markdown": "# Test"}
             items, collisions = ext.catalog_items([item_source], kind)
             self.assertEqual(collisions, [])
             self.assertEqual(items[0]["compatibility"], normalize_compatibility(wanted))
@@ -152,6 +153,64 @@ class ExtensionCatalogTests(unittest.TestCase):
         self.assertEqual(items, [])
         self.assertEqual(len(errors), 1)
 
+    def test_theme_resolution_variants_share_collection_identity(self):
+        packages = []
+        for variant, resolution in (("x3", (528, 792)), ("x4plus", (480, 800))):
+            manifest, _ = payload("snoopy", "theme-pack", resolution=resolution)
+            packages.append({"name": "snoopy", "variant_name": "snoopy-" + variant,
+                             "manifest": manifest, "repository": "example/snoopy",
+                             "title": "Snoopy", "author": "Tester", "tag": "v0.1.1",
+                             "asset_url": "https://example.test/" + variant,
+                             "sha256": "0" * 64, "bytes": 250, "release_url": "",
+                             "_details_markdown": "# Test"})
+        items, conflicts = ext.catalog_items(packages, "theme-pack")
+        self.assertEqual(conflicts, [])
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]["name"], "snoopy")
+        self.assertEqual(len(items[0]["variants"]), 2)
+        packages[1]["manifest"]["target_resolution"] = packages[0]["manifest"]["target_resolution"]
+        items, conflicts = ext.catalog_items(packages, "theme-pack")
+        self.assertEqual(items, [])
+        self.assertEqual(len(conflicts), 1)
+
+    def test_theme_manifest_requires_resolution(self):
+        manifest, files = payload("snoopy", "theme-pack", resolution=(528, 792))
+        self.assertEqual(ext.safe_manifest(manifest, "snoopy", "theme-pack", "v0.1.1"), manifest["files"])
+        manifest.pop("target_resolution")
+        with self.assertRaisesRegex(ext.CatalogError, "target_resolution"):
+            ext.safe_manifest(manifest, "snoopy", "theme-pack", "v0.1.1")
+
+    def test_discover_resolution_scoped_theme_release_assets(self):
+        a_id="snoopy"
+        releases=[]
+        raw={}
+        for variant, dims in (("x3",(528,792)),("x4plus",(480,800))):
+            _, files=payload(a_id,"theme-pack",resolution=dims)
+            stream=io.BytesIO()
+            with zipfile.ZipFile(stream,"w",compression=zipfile.ZIP_DEFLATED) as archive:
+                for relative, body in files.items():
+                    archive.writestr(f"{a_id}.crosspoint-theme/{relative}",body)
+            name=f"{a_id}-{variant}-0.1.1.crosspoint-theme.zip"
+            url=f"https://github.com/example/snoopy/releases/download/v0.1.1/{name}"
+            blob=stream.getvalue()
+            raw[url]=blob
+            releases.append({"name":name,"size":len(blob),"browser_download_url":url})
+        class FakeClient:
+            def latest_stable_release(self, repo):
+                return {"tag_name":"v0.1.1","assets":releases,"html_url":"https://example/release"}
+            def fetch_bytes_url(self, url, max_bytes):
+                assert len(raw[url])<=max_bytes
+                return raw[url]
+        repo={"full_name":"example/snoopy"}
+        packages=ext.stable_assets(FakeClient(),repo,"theme-pack")
+        self.assertEqual({p["name"] for p in packages},{"snoopy"})
+        self.assertEqual({p["variant_name"] for p in packages},{"snoopy-x3","snoopy-x4plus"})
+        catalog,conflicts=ext.catalog_items(packages,"theme-pack")
+        self.assertEqual(conflicts,[])
+        self.assertEqual(len(catalog),1)
+        self.assertEqual(len(catalog[0]["variants"]),2)
+        self.assertEqual({v["target_resolution"]["width"] for v in catalog[0]["variants"]},{528,480})
+
     def test_theme_manifest(self):
         _, raw = archive("halo","theme-pack")
         m = ext.check_asset(raw,"halo","theme-pack","v0.1.1")
@@ -188,7 +247,7 @@ class ExtensionCatalogTests(unittest.TestCase):
         manifest, _ = archive("halo", "theme-pack")
         manifest["author"] = "Jadehawk + IOSDEC"
         manifest["description"] = "HALO-inspired CrossPoint UI theme"
-        entry = {"name": "halo", "manifest": manifest, "repository": "artist/halo",
+        entry = {"name": "halo", "variant_name": "halo-x3", "manifest": manifest, "repository": "artist/halo",
                  "title": "HALO", "author": manifest["author"], "tag": "v0.1.1",
                  "release_url": "", "asset_url": "https://example.test/theme.zip",
                  "bytes": 500, "sha256": "a" * 64,
